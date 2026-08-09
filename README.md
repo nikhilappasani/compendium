@@ -60,6 +60,23 @@ The pull request is opened *here*, by CI, precisely so the machine that ran the 
 needs the `gh` CLI or an API token — only git push access. **A human reviews and merges. Nothing in
 this repo merges, approves, or closes anything on its own.**
 
+### Required repository settings — do this once
+
+GitHub disables both of these by default, and the `open-pr` job cannot work without them. Until
+they are set, pushes still succeed and the checks still run; only the automatic PR fails, and the
+job explains exactly this.
+
+**Settings → Actions → General → Workflow permissions**
+
+1. Select **Read and write permissions**
+2. Tick **Allow GitHub Actions to create and approve pull requests**
+
+Then re-run any failed `open-pr` job — nothing needs re-pushing, because the branch is already here.
+
+If you would rather not grant those permissions, the flow still works; you just open the pull
+request yourself from the pushed branch. `grimoire compendium-push` prints a ready-made compare URL
+for exactly that case.
+
 ### Pointing Grimoire at this repo
 
 Pick whichever suits the machine. If more than one applies, the first one here wins.

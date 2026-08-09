@@ -75,11 +75,32 @@ jobs:
             exit 0
           fi
           slug="${BRANCH#compendium/}"
-          gh pr create \
+
+          # Both repository settings below are OFF by default on a new repo, and both make this exact
+          # step fail with a permissions error. Explain that here rather than leaving a bare 403:
+          # the branch is already pushed safely, so this is a settings fix, not lost work.
+          if ! gh pr create \
             --base main \
             --head "$BRANCH" \
             --title "Compendium capture: ${slug}" \
             --body "$(printf 'Automated publish from a LoreWeaver interview close.\n\nBranch: `%s`\n\nReview the transcript and documents, then merge. Structure and secret-scan checks ran on the push that created this branch.\n\n🤖 Opened by Compendium CI — a human reviews and merges; automation never merges.' "$BRANCH")"
+          then
+            cat >&2 <<'HINT'
+
+          ────────────────────────────────────────────────────────────────────────
+          Could not open the pull request. Your capture is safe — the branch is
+          pushed and nothing was lost. This is almost always one of two repository
+          settings, both of which GitHub disables by default:
+
+            Settings → Actions → General → Workflow permissions
+              1. Select "Read and write permissions"
+              2. Tick "Allow GitHub Actions to create and approve pull requests"
+
+          Save, then re-run this job. Or open the PR by hand from the branch above.
+          ────────────────────────────────────────────────────────────────────────
+          HINT
+            exit 1
+          fi
 
   # Placeholder for Grimoire's Skillsmith: once it exists, this job (fires on a human merging a
   # capture PR) is where "generate a skill from the merged capture" wires in.
