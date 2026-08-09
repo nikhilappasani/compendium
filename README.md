@@ -32,10 +32,18 @@ rule yourself before committing.
 ## How content gets here
 
 At the close of an interview, LoreWeaver writes a capability's `transcript.md` and `documents/`
-locally, then runs `grimoire compendium-push <slug> --auto` — see
+locally, shows you their full content for approval, and only then pushes — see
 [`OUTPUT-CONTRACT.md` §3](https://github.com/nikhilappasani/grimoire/blob/main/skills/loreweaver/references/OUTPUT-CONTRACT.md#3-the-compendium-write-and-publish).
-That script secret-scans the capture, commits it to a `compendium/<slug>` branch cut from `main`'s
-tip, and pushes that branch. It never pushes to `main`, never uses `--force`, and never merges.
+
+```bash
+grimoire compendium-push <slug> --review              # prints the content and a digest
+grimoire compendium-push <slug> --auto --reviewed <digest>
+```
+
+The digest binds the approval to the exact bytes reviewed: if the capture changes in between, the
+push is blocked rather than shipping something nobody read. The script then secret-scans the
+capture, commits it to a `compendium/<slug>` branch cut from `main`'s tip, and pushes that branch.
+It never pushes to `main`, never uses `--force`, and never merges.
 
 `.github/workflows/compendium-ci.yml` in this repo picks it up from there:
 
