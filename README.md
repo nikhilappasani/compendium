@@ -48,8 +48,10 @@ It never pushes to `main`, never uses `--force`, and never merges.
 `.github/workflows/compendium-ci.yml` in this repo picks it up from there:
 
 1. **validate-structure** — every changed path must be an allow-listed repo file or part of a
-   well-formed capture (`<slug>/transcript.md`, optional `<slug>/capability-spec.md`,
-   `<slug>/documents/**`). Reports every violation, not just the first.
+   well-formed capture: `<slug>/transcript.md` (required), `<slug>/documents/**`, and
+   `<slug>/capability-spec.md` if someone chooses to file a copy of the spec alongside its evidence
+   by hand — Grimoire itself writes specs to a separate `specs` root, never here. Reports every
+   violation, not just the first.
 2. **secret-scan** — gitleaks, as a backstop to the client-side scan that a modified client could
    skip.
 3. **open-pr** — opens the review pull request, but only if both checks passed.
@@ -60,20 +62,34 @@ this repo merges, approves, or closes anything on its own.**
 
 ### Pointing Grimoire at this repo
 
-Any one of these, first hit wins:
+Pick whichever suits the machine. If more than one applies, the first one here wins.
+
+**1. You already have a clone** — point an environment variable at it:
 
 ```bash
-export GRIMOIRE_COMPENDIUM_ROOT=~/code/compendium    # your own clone
+export GRIMOIRE_COMPENDIUM_ROOT=~/code/compendium
 ```
+
+**2. Same idea, written into config** — `roots.compendium` in `grimoire.config.json`:
 
 ```json
-"roots":   { "compendium": "./compendium" },          // in grimoire.config.json
-"compendiumRepository": "git@github.com:nikhilappasani/compendium.git"
+{
+  "roots": { "compendium": "/home/you/code/compendium" }
+}
 ```
 
-With only `compendiumRepository` set, the publish script maintains its own clone under
-`~/.grimoire/compendium` and clones it on first use — the zero-setup path for a machine that has
-never seen this repo.
+**3. You have neither, and want zero setup** — give Grimoire the repo URL and let it manage its own
+clone under `~/.grimoire/compendium`, created on first use:
+
+```json
+{
+  "compendiumRepository": "git@github.com:nikhilappasani/compendium.git"
+}
+```
+
+Option 3 is the one that makes a brand-new machine work without anybody preparing it. Use the SSH
+URL if the machine authenticates to GitHub with an SSH key, or the `https://` URL if it uses a git
+credential helper.
 
 ## Status
 
