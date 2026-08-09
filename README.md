@@ -31,14 +31,41 @@ rule yourself before committing.
 
 ## How content gets here
 
-LoreWeaver writes a capability's `transcript.md` and `documents/` locally at the close of an
-interview — see
-[`OUTPUT-CONTRACT.md` §3](https://github.com/nikhilappasani/grimoire/blob/main/skills/loreweaver/references/OUTPUT-CONTRACT.md#3-the-compendium-write).
-That write is local by design; LoreWeaver never pushes to git itself. Getting a capability's folder
-from a local clone onto this remote is a separate, manual step for now.
+At the close of an interview, LoreWeaver writes a capability's `transcript.md` and `documents/`
+locally, then runs `grimoire compendium-push <slug> --auto` — see
+[`OUTPUT-CONTRACT.md` §3](https://github.com/nikhilappasani/grimoire/blob/main/skills/loreweaver/references/OUTPUT-CONTRACT.md#3-the-compendium-write-and-publish).
+That script secret-scans the capture, commits it to a `compendium/<slug>` branch cut from `main`'s
+tip, and pushes that branch. It never pushes to `main`, never uses `--force`, and never merges.
 
-Point Grimoire at this repo by setting `GRIMOIRE_COMPENDIUM_ROOT` to your local clone of it, or by
-setting `roots.compendium` in `grimoire.config.json`.
+`.github/workflows/compendium-ci.yml` in this repo picks it up from there:
+
+1. **validate-structure** — every changed path must be an allow-listed repo file or part of a
+   well-formed capture (`<slug>/transcript.md`, optional `<slug>/capability-spec.md`,
+   `<slug>/documents/**`). Reports every violation, not just the first.
+2. **secret-scan** — gitleaks, as a backstop to the client-side scan that a modified client could
+   skip.
+3. **open-pr** — opens the review pull request, but only if both checks passed.
+
+The pull request is opened *here*, by CI, precisely so the machine that ran the interview never
+needs the `gh` CLI or an API token — only git push access. **A human reviews and merges. Nothing in
+this repo merges, approves, or closes anything on its own.**
+
+### Pointing Grimoire at this repo
+
+Any one of these, first hit wins:
+
+```bash
+export GRIMOIRE_COMPENDIUM_ROOT=~/code/compendium    # your own clone
+```
+
+```json
+"roots":   { "compendium": "./compendium" },          // in grimoire.config.json
+"compendiumRepository": "git@github.com:nikhilappasani/compendium.git"
+```
+
+With only `compendiumRepository` set, the publish script maintains its own clone under
+`~/.grimoire/compendium` and clones it on first use — the zero-setup path for a machine that has
+never seen this repo.
 
 ## Status
 

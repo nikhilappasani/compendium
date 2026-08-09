@@ -1,0 +1,93 @@
+# Compendium CI — the repo-side half of Grimoire's publish flow.
+#
+# `grimoire compendium-push` (run automatically by LoreWeaver at interview close) pushes a
+# `compendium/<slug>` review branch. This workflow validates it, secret-scans it, and opens the
+# pull request — so the machine that ran the interview never needs `gh` or a token, only git push
+# access. A human reviews and merges; nothing here ever merges.
+#
+# The checks run on the `push` event and attach to the branch's head SHA, so they satisfy branch
+# protection on `main` even though a PR created with the built-in GITHUB_TOKEN does not itself
+# re-trigger workflows (GitHub's recursion guard).
+
+name: Compendium CI
+
+on:
+  push:
+    branches:
+      - 'compendium/**'
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  validate-structure:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Compute changed files vs main
+        run: |
+          git fetch origin main
+          git diff --name-only "$(git merge-base origin/main HEAD)" HEAD > changed.txt
+          echo "Changed files:"
+          cat changed.txt
+
+      - name: Validate capture structure
+        run: bash .github/scripts/validate-structure.sh changed.txt
+
+  secret-scan:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Backstop to the client-side scan in `grimoire compendium-push` — this one cannot be
+      # skipped by a modified client. Free for personal-account repos; an organization account
+      # would need a (free) license key from gitleaks.io as GITLEAKS_LICENSE.
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  open-pr:
+    needs: [validate-structure, secret-scan]
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Open the review PR if one does not exist
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          existing="$(gh pr list --head "$BRANCH" --base main --state open --json number --jq length)"
+          if [ "$existing" != "0" ]; then
+            echo "PR already open for $BRANCH — nothing to do."
+            exit 0
+          fi
+          slug="${BRANCH#compendium/}"
+          gh pr create \
+            --base main \
+            --head "$BRANCH" \
+            --title "Compendium capture: ${slug}" \
+            --body "$(printf 'Automated publish from a LoreWeaver interview close.\n\nBranch: `%s`\n\nReview the transcript and documents, then merge. Structure and secret-scan checks ran on the push that created this branch.\n\n🤖 Opened by Compendium CI — a human reviews and merges; automation never merges.' "$BRANCH")"
+
+  # Placeholder for Grimoire's Skillsmith: once it exists, this job (fires on a human merging a
+  # capture PR) is where "generate a skill from the merged capture" wires in.
+  skillsmith-trigger:
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "Capture merged: ${{ github.event.pull_request.head.ref }}"
+          echo "Skillsmith auto-trigger placeholder — not built yet. When Skillsmith exists,"
+          echo "this is where 'spec merged -> generate skill' begins."
