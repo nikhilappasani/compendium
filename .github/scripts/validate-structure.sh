@@ -3,8 +3,11 @@
 #
 # Input: a file containing changed paths (one per line, relative to the repo root).
 # Every changed path must be either an allow-listed repo file or part of a well-formed
-# capability capture: <slug>/transcript.md, optional <slug>/capability-spec.md, and
-# <slug>/documents/**. Anything else is a violation.
+# capability capture: <slug>/transcript.md, optional <slug>/capability-spec.md,
+# <slug>/documents/**, and <slug>/knowledge/**. Anything else is a violation.
+#
+# <slug>/knowledge/ holds the OKF concepts distilled from the interview. Everything one interview
+# produced lives under its slug, so a capture reviews as a single unit.
 #
 # Reports EVERY violation found, then exits non-zero if any exist — never stops at the first.
 # Self-contained on purpose: this repo must not depend on Grimoire's internal tooling.
@@ -52,7 +55,8 @@ while IFS= read -r path; do
   case "$rest" in
     transcript.md|capability-spec.md) ;;
     documents/*) ;;
-    *) report "\"$path\" is outside the expected <slug>/transcript.md + <slug>/documents/** shape" ;;
+    knowledge/*) ;;
+    *) report "\"$path\" is outside the expected <slug>/ shape (transcript.md, documents/**, knowledge/**)" ;;
   esac
 
   # Once per slug: the transcript must exist in the tree (deleted files still appear in the diff,

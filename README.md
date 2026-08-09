@@ -1,23 +1,32 @@
 # Compendium
 
-The raw evidence behind capabilities specified with [LoreWeaver](https://github.com/nikhilappasani/grimoire):
-interview transcripts and the source documents a subject-matter expert supplied, one folder per
-capability.
+Everything an interview with [LoreWeaver](https://github.com/nikhilappasani/grimoire) produces, one
+folder per capability: the transcript, the documents the expert supplied, and the knowledge distilled
+from them.
 
 ```text
-compendium/
-└── <slug>/
-    ├── transcript.md      the full interview Q&A, verbatim, in question order
-    └── documents/         source documents as supplied
+<slug>/
+├── transcript.md      the full interview Q&A, verbatim, in question order
+├── documents/         source documents as supplied
+└── knowledge/         OKF concepts, in a folder named for each concept's type
+    ├── index.md
+    ├── glossary/      policies/      playbooks/     runbooks/
+    └── references/    diagrams/      processes/     apis/        datasets/
 ```
 
 ## What this is, and isn't
 
-This is **not** a knowledge base. A knowledge base holds small, distilled, curated facts meant to be
-read by a running skill. This repo holds the bulkier, unprocessed material those facts were drawn
-from — full transcripts and raw documents, never distilled, never filtered for relevance. Its growth
-profile is expected to be larger and messier than a knowledge base on purpose; keeping the two apart
-means document churn here never touches a knowledge base's git history or its browsing experience.
+This is **not** the curated knowledge base a running skill reads. That is a separate repository,
+filled by the build step when a capture is turned into a skill.
+
+This repo is where captures land *first*, and everything from one interview stays together on
+purpose. A reviewer judging whether a concept is right needs the transcript line it came from and
+the document that backs it; splitting those across repositories means reading two places to check
+one claim.
+
+So concepts here are **drafts under review**, not settled knowledge. Promotion to the shared base
+happens on merge-and-build, which keeps that base curated by construction rather than filling with
+concepts from captures nobody accepted.
 
 ## The one hard rule
 
@@ -48,10 +57,10 @@ It never pushes to `main`, never uses `--force`, and never merges.
 `.github/workflows/compendium-ci.yml` in this repo picks it up from there:
 
 1. **validate-structure** — every changed path must be an allow-listed repo file or part of a
-   well-formed capture: `<slug>/transcript.md` (required), `<slug>/documents/**`, and
-   `<slug>/capability-spec.md` if someone chooses to file a copy of the spec alongside its evidence
-   by hand — Grimoire itself writes specs to a separate `specs` root, never here. Reports every
-   violation, not just the first.
+   well-formed capture: `<slug>/transcript.md` (required), `<slug>/documents/**`,
+   `<slug>/knowledge/**`, and `<slug>/capability-spec.md` if someone chooses to file a copy of the
+   spec alongside its evidence by hand — Grimoire itself writes specs to a separate `specs` root,
+   never here. Reports every violation, not just the first.
 2. **secret-scan** — gitleaks, as a backstop to the client-side scan that a modified client could
    skip.
 3. **open-pr** — opens the review pull request, but only if both checks passed.
