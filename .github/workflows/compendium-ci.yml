@@ -83,7 +83,7 @@ jobs:
             --base main \
             --head "$BRANCH" \
             --title "Compendium capture: ${slug}" \
-            --body "$(printf 'Automated publish from a LoreWeaver interview close.\n\nBranch: `%s`\n\nReview the transcript and documents, then merge. Structure and secret-scan checks ran on the push that created this branch.\n\n🤖 Opened by Compendium CI — a human reviews and merges; automation never merges.' "$BRANCH")"
+            --body "$(printf 'Published from a LoreWeaver interview.\n\nBranch: `%s`\n\nReview the transcript, documents and knowledge, then merge. Structure and secret-scan checks ran on the push that created this branch.\n\nOpened by Compendium CI. Merging is a human decision.' "$BRANCH")"
           then
             cat >&2 <<'HINT'
 
